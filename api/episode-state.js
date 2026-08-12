@@ -1,14 +1,8 @@
-const ENV = typeof process !== "undefined" && process.env ? process.env : {};
-
 const SCHEDULE = {
   revealAt: new Date("2026-08-17T09:00:00-05:00"),
   publishAt: new Date("2026-08-18T09:00:00-05:00"),
   channelUrl: "https://www.youtube.com/@primerapiedraec",
-  spotifyUrl: "https://open.spotify.com/show/033mvQVP3Z24000ll5EqMz",
-  premiereUrl: ENV.EPISODE_03_PREMIERE_URL || "https://www.youtube.com/@primerapiedraec",
-  episodeUrl: ENV.EPISODE_03_EPISODE_URL || "https://www.youtube.com/@primerapiedraec",
-  guestName: ENV.EPISODE_03_GUEST_NAME || "Invitado especial",
-  guestRole: ENV.EPISODE_03_GUEST_ROLE || "Una conversación que construye"
+  spotifyUrl: "https://open.spotify.com/show/033mvQVP3Z24000ll5EqMz"
 };
 
 function teaser() {
@@ -33,15 +27,15 @@ function reveal() {
     stage: "reveal",
     episode: {
       status: "Estreno · martes 18",
-      title: `EP. 03 · ${SCHEDULE.guestName}`,
-      summary: SCHEDULE.guestRole,
-      cardUrl: SCHEDULE.premiereUrl,
-      youtubeUrl: SCHEDULE.premiereUrl,
+      title: "EP. 03 · Mañana estrenamos",
+      summary: "Una conversación sobre negocios, inversión y visión.",
+      cardUrl: SCHEDULE.channelUrl,
+      youtubeUrl: SCHEDULE.channelUrl,
       spotifyUrl: SCHEDULE.spotifyUrl,
       youtubeLabel: "Activar recordatorio",
       youtubeSubtitle: "Estreno el martes 18",
-      pageTitle: `EP. 03 · ${SCHEDULE.guestName} | Primera Piedra EC`,
-      metaDescription: `${SCHEDULE.guestName} conversa con Karina Celleri y Rebeca Astudillo en Primera Piedra Podcast. Estreno martes 18.`
+      pageTitle: "EP. 03 · Estreno martes 18 | Primera Piedra EC",
+      metaDescription: "Una nueva conversación de Primera Piedra Podcast llega el martes 18."
     }
   };
 }
@@ -51,15 +45,15 @@ function live() {
     stage: "live",
     episode: {
       status: "Último episodio",
-      title: `EP. 03 · ${SCHEDULE.guestName}`,
-      summary: SCHEDULE.guestRole,
-      cardUrl: SCHEDULE.episodeUrl,
-      youtubeUrl: SCHEDULE.episodeUrl,
+      title: "EP. 03 · Ya disponible",
+      summary: "Una conversación sobre negocios, inversión y visión.",
+      cardUrl: SCHEDULE.channelUrl,
+      youtubeUrl: SCHEDULE.channelUrl,
       spotifyUrl: SCHEDULE.spotifyUrl,
-      youtubeLabel: "Ver episodio completo",
+      youtubeLabel: "Ver último episodio",
       youtubeSubtitle: "Ya disponible en YouTube",
-      pageTitle: `EP. 03 · ${SCHEDULE.guestName} | Primera Piedra EC`,
-      metaDescription: `Mira el nuevo episodio de Primera Piedra Podcast con ${SCHEDULE.guestName}, Karina Celleri y Rebeca Astudillo.`
+      pageTitle: "EP. 03 · Ya disponible | Primera Piedra EC",
+      metaDescription: "Mira el nuevo episodio de Primera Piedra Podcast con Karina Celleri y Rebeca Astudillo."
     }
   };
 }
