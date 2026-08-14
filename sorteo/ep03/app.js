@@ -23,7 +23,8 @@
     CONSENT_REQUIRED: "Necesitamos todas las confirmaciones para registrar tu participación.",
     SOCIAL_ROUTE_REQUIRED: "Completa primero el recorrido por las tres redes.",
     ANTI_BOT_FAILED: "No pudimos validar el control de seguridad. Intenta nuevamente.",
-    ANTI_BOT_NOT_CONFIGURED: "El registro está temporalmente en preparación.",
+    ANTI_ABUSE_NOT_CONFIGURED: "El registro está temporalmente en preparación.",
+    TOO_MANY_REQUESTS: "Este dispositivo alcanzó el límite temporal de registros.",
     SUBMISSION_TOO_FAST: "Espera un momento y revisa tus datos antes de enviar.",
     SERVICE_NOT_CONFIGURED: "Este Preview aún no tiene conectada la base de participantes.",
     UNEXPECTED_ERROR: "No pudimos completar el registro. Intenta nuevamente en unos minutos.",
@@ -237,4 +238,3 @@
 
   initialize();
 })();
-

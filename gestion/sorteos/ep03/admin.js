@@ -2,11 +2,14 @@
   "use strict";
 
   const SESSION_KEY = "pp-giveaway-admin-session-v1";
-  let session = readSessionFromHash() || readSession();
+  let session = null;
   let config = null;
   let entries = [];
+  let waitlist = [];
   let snapshot = null;
   let draw = null;
+
+  session = readSessionFromHash() || readSession();
 
   function readSessionFromHash() {
     if (!location.hash.includes("access_token=")) return null;
@@ -69,6 +72,7 @@
   async function loadDashboard() {
     const data = await api("/api/sorteo/admin/participantes");
     entries = data.entries || [];
+    waitlist = data.waitlist || [];
     snapshot = data.snapshot || null;
     draw = data.draw || null;
     render();
@@ -80,6 +84,19 @@
     document.getElementById("stat-valid").textContent = counts.valid || 0;
     document.getElementById("stat-review").textContent = counts.review || 0;
     document.getElementById("stat-invalid").textContent = counts.invalid || 0;
+    document.getElementById("stat-waitlist").textContent = waitlist.length;
+    const waitlistBody = document.getElementById("waitlist-body");
+    waitlistBody.replaceChildren();
+    waitlist.forEach((person) => {
+      const row = document.createElement("tr");
+      const email = document.createElement("td");
+      const date = document.createElement("td");
+      email.textContent = person.email;
+      date.textContent = new Intl.DateTimeFormat("es-EC", { dateStyle: "short", timeStyle: "short", timeZone: "America/Guayaquil" }).format(new Date(person.createdAt));
+      row.append(email, date);
+      waitlistBody.append(row);
+    });
+    document.getElementById("waitlist-empty").hidden = waitlist.length > 0;
     const body = document.getElementById("entries-body");
     body.replaceChildren();
     entries.forEach((entry) => {
@@ -117,7 +134,7 @@
       document.getElementById("snapshot-hash").textContent = snapshot.fingerprint;
       document.getElementById("snapshot-date").textContent = new Intl.DateTimeFormat("es-EC", { dateStyle: "long", timeStyle: "short", timeZone: "America/Guayaquil" }).format(new Date(snapshot.createdAt));
     }
-    document.getElementById("campaign-label").textContent = draw ? "Sorteo realizado" : snapshot ? "Lista congelada" : "Recibiendo registros";
+    document.getElementById("campaign-label").textContent = draw ? "Sorteo realizado" : snapshot ? "Lista congelada" : entries.length ? "Recibiendo registros" : waitlist.length ? "Expectativa activa" : "Lista de espera lista";
   }
 
   async function action(actionName, extra = {}) {
@@ -160,6 +177,12 @@
     const rows = entries.map((entry) => [entry.registrationCode, entry.fullName, entry.city, entry.socialNetwork, entry.socialHandle, entry.contactType, entry.contactValue, entry.status, entry.createdAt]);
     const csv = [header, ...rows].map((row) => row.map(escape).join(",")).join("\r\n");
     const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" })); link.download = "participantes-sorteo-ep03.csv"; link.click(); URL.revokeObjectURL(link.href);
+  });
+  document.getElementById("export-waitlist-button").addEventListener("click", () => {
+    const escape = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const rows = [["correo", "fecha"], ...waitlist.map((person) => [person.email, person.createdAt])];
+    const csv = rows.map((row) => row.map(escape).join(",")).join("\r\n");
+    const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" })); link.download = "lista-espera-ep03.csv"; link.click(); URL.revokeObjectURL(link.href);
   });
   document.getElementById("logout-button").addEventListener("click", () => { clearSession(); location.reload(); });
 

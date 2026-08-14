@@ -3,6 +3,9 @@
 
 create extension if not exists pgcrypto;
 
+-- Prevent untrusted roles from creating objects that security-definer functions could resolve.
+revoke create on schema public from public;
+
 create table if not exists public.giveaway_campaigns (
   id text primary key,
   title text not null,
@@ -40,6 +43,7 @@ create table if not exists public.giveaway_entries (
   consent_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   source text not null default 'web',
+  request_hash text not null,
   unique (campaign_id, contact_hash),
   unique (campaign_id, social_hash)
 );
@@ -48,6 +52,8 @@ create index if not exists giveaway_entries_campaign_created_idx
   on public.giveaway_entries (campaign_id, created_at desc);
 create index if not exists giveaway_entries_campaign_status_idx
   on public.giveaway_entries (campaign_id, eligibility_status);
+create index if not exists giveaway_entries_request_window_idx
+  on public.giveaway_entries (campaign_id, request_hash, created_at desc);
 
 create table if not exists public.giveaway_admins (
   email text primary key,
@@ -55,6 +61,23 @@ create table if not exists public.giveaway_admins (
   role text not null default 'admin' check (role in ('admin', 'viewer')),
   created_at timestamptz not null default now()
 );
+
+create table if not exists public.giveaway_waitlist (
+  id uuid primary key default gen_random_uuid(),
+  campaign_id text not null references public.giveaway_campaigns(id) on delete restrict,
+  email text not null,
+  email_hash text not null,
+  consent_confirmed boolean not null,
+  consent_at timestamptz not null default now(),
+  source text not null default 'hub',
+  request_hash text not null,
+  unique (campaign_id, email_hash)
+);
+
+create index if not exists giveaway_waitlist_campaign_created_idx
+  on public.giveaway_waitlist (campaign_id, consent_at desc);
+create index if not exists giveaway_waitlist_request_window_idx
+  on public.giveaway_waitlist (campaign_id, request_hash, consent_at desc);
 
 create table if not exists public.giveaway_snapshots (
   id uuid primary key default gen_random_uuid(),
@@ -84,12 +107,14 @@ create table if not exists public.giveaway_draws (
 alter table public.giveaway_campaigns enable row level security;
 alter table public.giveaway_entries enable row level security;
 alter table public.giveaway_admins enable row level security;
+alter table public.giveaway_waitlist enable row level security;
 alter table public.giveaway_snapshots enable row level security;
 alter table public.giveaway_draws enable row level security;
 
 revoke all on public.giveaway_campaigns from anon, authenticated;
 revoke all on public.giveaway_entries from anon, authenticated;
 revoke all on public.giveaway_admins from anon, authenticated;
+revoke all on public.giveaway_waitlist from anon, authenticated;
 revoke all on public.giveaway_snapshots from anon, authenticated;
 revoke all on public.giveaway_draws from anon, authenticated;
 
@@ -183,6 +208,7 @@ create or replace function public.register_giveaway_entry(
   p_privacy_confirmed boolean,
   p_public_announcement_confirmed boolean,
   p_social_visits jsonb,
+  p_request_hash text default '',
   p_source text default 'web'
 )
 returns jsonb
@@ -224,6 +250,10 @@ begin
     and coalesce((p_social_visits ->> 'tiktok')::boolean, false)) then
     raise exception using errcode = 'P0001', message = 'SOCIAL_ROUTE_REQUIRED';
   end if;
+  if length(p_request_hash) <> 64 then raise exception using errcode = 'P0001', message = 'ANTI_ABUSE_NOT_CONFIGURED'; end if;
+  if (select count(*) from public.giveaway_entries where campaign_id = c.id and request_hash = p_request_hash and created_at >= now() - interval '24 hours') >= 8 then
+    raise exception using errcode = 'P0001', message = 'TOO_MANY_REQUESTS';
+  end if;
 
   code := 'PP3-' || upper(substr(replace(entry_id::text, '-', ''), 1, 8));
 
@@ -231,13 +261,13 @@ begin
     id, campaign_id, registration_code, full_name, city, social_network, social_handle,
     contact_type, contact_value, contact_hash, social_hash, age_confirmed,
     ecuador_resident, pickup_confirmed, social_declaration, terms_confirmed, privacy_confirmed,
-    public_announcement_confirmed, social_visits, terms_version, source
+    public_announcement_confirmed, social_visits, terms_version, source, request_hash
   ) values (
     entry_id, c.id, code, clean_name, clean_city, p_social_network, '@' || clean_handle,
     p_contact_type, clean_contact,
     encode(digest(c.id || ':contact:' || clean_contact, 'sha256'), 'hex'),
     encode(digest(c.id || ':social:' || p_social_network || ':' || clean_handle, 'sha256'), 'hex'),
-    true, true, true, true, true, true, true, p_social_visits, c.terms_version, left(coalesce(p_source, 'web'), 40)
+    true, true, true, true, true, true, true, p_social_visits, c.terms_version, left(coalesce(p_source, 'web'), 40), p_request_hash
   );
 
   return jsonb_build_object('ok', true, 'registrationCode', code, 'createdAt', now());
@@ -247,8 +277,46 @@ exception
 end;
 $$;
 
-revoke all on function public.register_giveaway_entry(text,text,text,text,text,text,text,boolean,boolean,boolean,boolean,boolean,boolean,boolean,jsonb,text) from public;
-grant execute on function public.register_giveaway_entry(text,text,text,text,text,text,text,boolean,boolean,boolean,boolean,boolean,boolean,boolean,jsonb,text) to anon, authenticated;
+revoke all on function public.register_giveaway_entry(text,text,text,text,text,text,text,boolean,boolean,boolean,boolean,boolean,boolean,boolean,jsonb,text,text) from public;
+grant execute on function public.register_giveaway_entry(text,text,text,text,text,text,text,boolean,boolean,boolean,boolean,boolean,boolean,boolean,jsonb,text,text) to anon, authenticated;
+
+create or replace function public.join_giveaway_waitlist(
+  p_campaign_id text,
+  p_email text,
+  p_consent boolean,
+  p_request_hash text default '',
+  p_source text default 'hub'
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+  c public.giveaway_campaigns%rowtype;
+  clean_email text := lower(regexp_replace(trim(coalesce(p_email, '')), '\s+', '', 'g'));
+begin
+  select * into c from public.giveaway_campaigns where id = p_campaign_id;
+  if not found or (now() >= c.opens_at and c.id !~ '-preview$') then raise exception using errcode = 'P0001', message = 'WAITLIST_CLOSED'; end if;
+  if clean_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' or length(clean_email) > 150 then
+    raise exception using errcode = 'P0001', message = 'INVALID_EMAIL';
+  end if;
+  if not coalesce(p_consent, false) then raise exception using errcode = 'P0001', message = 'WAITLIST_CONSENT_REQUIRED'; end if;
+  if length(p_request_hash) <> 64 then raise exception using errcode = 'P0001', message = 'ANTI_ABUSE_NOT_CONFIGURED'; end if;
+  if (select count(*) from public.giveaway_waitlist where campaign_id = c.id and request_hash = p_request_hash and consent_at >= now() - interval '24 hours') >= 15 then
+    raise exception using errcode = 'P0001', message = 'TOO_MANY_REQUESTS';
+  end if;
+
+  insert into public.giveaway_waitlist (campaign_id, email, email_hash, consent_confirmed, source, request_hash)
+  values (c.id, clean_email, encode(digest(c.id || ':waitlist:' || clean_email, 'sha256'), 'hex'), true, left(coalesce(p_source, 'hub'), 40), p_request_hash)
+  on conflict (campaign_id, email_hash) do nothing;
+
+  return jsonb_build_object('ok', true);
+end;
+$$;
+
+revoke all on function public.join_giveaway_waitlist(text,text,boolean,text,text) from public;
+grant execute on function public.join_giveaway_waitlist(text,text,boolean,text,text) to anon, authenticated;
 
 create or replace function public.admin_giveaway_entries(p_campaign_id text)
 returns jsonb
@@ -271,7 +339,9 @@ begin
     'snapshot', (select jsonb_build_object('id', id, 'entryCount', entry_count, 'fingerprint', fingerprint, 'createdAt', created_at)
       from public.giveaway_snapshots where campaign_id = p_campaign_id limit 1),
     'draw', (select jsonb_build_object('id', id, 'winners', winners, 'alternates', alternates, 'createdAt', created_at, 'publishedAt', published_at)
-      from public.giveaway_draws where campaign_id = p_campaign_id limit 1)
+      from public.giveaway_draws where campaign_id = p_campaign_id limit 1),
+    'waitlist', coalesce((select jsonb_agg(jsonb_build_object('id', id, 'email', email, 'createdAt', consent_at) order by consent_at desc)
+      from public.giveaway_waitlist where campaign_id = p_campaign_id), '[]'::jsonb)
   );
 end;
 $$;
@@ -403,5 +473,10 @@ on conflict (id) do update set
   draw_at = excluded.draw_at,
   terms_version = excluded.terms_version;
 
+insert into public.giveaway_admins (email, display_name, role)
+values ('wallkeron60hz@gmail.com', 'Wallker', 'admin')
+on conflict (email) do update set display_name = excluded.display_name, role = excluded.role;
+
 comment on table public.giveaway_entries is 'Datos privados de participantes del sorteo EP. 03. Sin acceso directo desde clientes.';
 comment on table public.giveaway_draws is 'Resultado inmutable por snapshot; publicación explícita y separada.';
+comment on table public.giveaway_waitlist is 'Correos privados con consentimiento para un único recordatorio previo al EP. 03.';

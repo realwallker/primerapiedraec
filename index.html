@@ -72,13 +72,39 @@
       <svg class="episode-arrow" aria-hidden="true"><use href="#arrow"/></svg>
     </a>
 
-    <a class="giveaway tracked-link" id="giveaway-card" data-track="giveaway" data-stage="teaser" href="/sorteo/ep03" aria-labelledby="giveaway-title">
+    <a class="giveaway tracked-link" id="giveaway-card" data-track="giveaway" data-stage="teaser" href="#recordatorio" aria-labelledby="giveaway-title">
       <span class="giveaway-book"><img src="./assets/sorteo-ep03/collage/boris-cover-official.webp" alt=""><i>2</i></span>
       <span class="giveaway-copy"><small id="giveaway-kicker">Muy pronto · EP. 03</small><strong id="giveaway-title">Algo especial se está construyendo</strong><span id="giveaway-summary">Una experiencia para sembrar grandes aprendizajes.</span></span>
-      <span class="giveaway-action" id="giveaway-action">Descubrir pronto</span>
+      <span class="giveaway-action" id="giveaway-action">Activar recordatorio</span>
       <svg class="arrow" aria-hidden="true"><use href="#arrow"/></svg>
       <span class="giveaway-coin coin-a" aria-hidden="true">✦</span><span class="giveaway-coin coin-b" aria-hidden="true">2</span>
     </a>
+
+    <aside class="giveaway-coachmark" id="giveaway-coachmark" aria-labelledby="giveaway-coachmark-title" aria-live="polite" hidden>
+      <button class="giveaway-coachmark-close" id="giveaway-coachmark-close" type="button" aria-label="Cerrar aviso especial">×</button>
+      <span class="giveaway-coachmark-kicker" id="giveaway-coachmark-kicker">Primera Piedra · muy pronto</span>
+      <strong id="giveaway-coachmark-title">Estamos construyendo algo especial.</strong>
+      <p id="giveaway-coachmark-summary">Entra a la lista y activa el recordatorio.</p>
+      <div class="giveaway-coachmark-actions" id="giveaway-open-actions">
+        <a id="giveaway-coachmark-cta" href="/sorteo/ep03">Entrar ahora <svg aria-hidden="true"><use href="#arrow"/></svg></a>
+        <button class="giveaway-coachmark-dismiss" type="button">Seguir explorando</button>
+      </div>
+      <div class="giveaway-coachmark-actions" id="giveaway-waitlist-actions" hidden>
+        <button class="coachmark-primary" id="giveaway-reminder-start" type="button">Quiero enterarme primero <svg aria-hidden="true"><use href="#arrow"/></svg></button>
+        <button class="giveaway-coachmark-dismiss" type="button">Ahora no</button>
+      </div>
+      <form class="giveaway-reminder-form" id="giveaway-reminder-form" hidden>
+        <label for="giveaway-reminder-email">Tu correo</label>
+        <div><input id="giveaway-reminder-email" name="email" type="email" autocomplete="email" maxlength="150" placeholder="nombre@correo.com" required><button type="submit">Avisarme <svg aria-hidden="true"><use href="#arrow"/></svg></button></div>
+        <label class="giveaway-reminder-consent"><input name="consent" type="checkbox" required><span>Acepto recibir un único aviso sobre esta edición.</span></label>
+        <label class="giveaway-reminder-honeypot" aria-hidden="true">Sitio web<input name="website" tabindex="-1" autocomplete="off"></label>
+        <p class="giveaway-reminder-status" id="giveaway-reminder-status" role="status" hidden></p>
+      </form>
+      <div class="giveaway-reminder-success" id="giveaway-reminder-success" hidden>
+        <b>Listo, estás en la lista.</b><span>Activa ahora el recordatorio en tu calendario.</span>
+        <div><a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Primera%20Piedra%20%C2%B7%20Algo%20especial&amp;dates=20260818T120000Z%2F20260818T123000Z&amp;details=Estamos%20construyendo%20algo%20especial.%20Desc%C3%BAbrelo%20en%20https%3A%2F%2Fprimerapiedraec.vercel.app%2F&amp;location=https%3A%2F%2Fprimerapiedraec.vercel.app%2F" target="_blank" rel="noopener noreferrer">Google Calendar</a><a href="/sorteo/ep03/recordatorio.ics" download>Apple / Outlook</a></div>
+      </div>
+    </aside>
 
     <nav class="links" id="enlaces" aria-label="Enlaces principales de Primera Piedra">
       <a class="link primary tracked-link" data-track="youtube" data-platform="youtube" href="https://www.youtube.com/@primerapiedraec" target="_blank" rel="noopener noreferrer">
@@ -114,6 +140,7 @@
       <span>Karina Celleri · Rebeca Astudillo</span>
     </footer>
   </main>
+  <button class="giveaway-spotlight-scrim" id="giveaway-spotlight-scrim" type="button" aria-label="Cerrar aviso especial" hidden></button>
   <script src="./site-config.js"></script>
   <script src="./app.js"></script>
 </body>

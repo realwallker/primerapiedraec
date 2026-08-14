@@ -1,5 +1,7 @@
 "use strict";
 
+const crypto = require("node:crypto");
+
 const DEFAULT_PRODUCTION_CAMPAIGN = "ep03-boris-2026";
 const DEFAULT_PREVIEW_CAMPAIGN = "ep03-boris-2026-preview";
 
@@ -19,6 +21,7 @@ function getConfig() {
     campaignId: process.env.GIVEAWAY_CAMPAIGN_ID || (isPreview ? DEFAULT_PREVIEW_CAMPAIGN : DEFAULT_PRODUCTION_CAMPAIGN),
     turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || "",
     turnstileSecret: process.env.TURNSTILE_SECRET_KEY || "",
+    hashSecret: process.env.GIVEAWAY_HASH_SECRET || "",
     isPreview,
   };
 }
@@ -82,7 +85,7 @@ async function rpc(functionName, params, accessToken) {
 
 async function verifyTurnstile(token, remoteIp) {
   const config = getConfig();
-  if (!config.turnstileSecret) return config.isPreview;
+  if (!config.turnstileSecret) return true;
   if (!token) return false;
   const body = new URLSearchParams({ secret: config.turnstileSecret, response: token });
   if (remoteIp) body.set("remoteip", remoteIp);
@@ -94,6 +97,14 @@ async function verifyTurnstile(token, remoteIp) {
   if (!response.ok) return false;
   const result = await response.json();
   return result.success === true;
+}
+
+function requestFingerprint(request) {
+  const config = getConfig();
+  if (!config.hashSecret) return "";
+  const ip = String(request.headers["x-forwarded-for"] || request.socket?.remoteAddress || "unknown").split(",")[0].trim();
+  const userAgent = String(request.headers["user-agent"] || "unknown").slice(0, 300);
+  return crypto.createHmac("sha256", config.hashSecret).update(`${ip}|${userAgent}`).digest("hex");
 }
 
 function bearerToken(request) {
@@ -108,6 +119,8 @@ function publicError(error) {
     "SOCIAL_ROUTE_REQUIRED", "DUPLICATE_ENTRY", "PAYLOAD_TOO_LARGE", "INVALID_JSON",
     "ADMIN_REQUIRED", "ENTRY_NOT_FOUND", "INVALID_STATUS", "SNAPSHOT_ALREADY_FROZEN",
     "NOT_ENOUGH_VALID_ENTRIES", "SNAPSHOT_REQUIRED", "DRAW_REQUIRED", "SERVICE_NOT_CONFIGURED",
+    "INVALID_EMAIL", "WAITLIST_CONSENT_REQUIRED", "WAITLIST_CLOSED", "TOO_MANY_REQUESTS",
+    "ANTI_ABUSE_NOT_CONFIGURED",
   ]);
   const message = String(error?.message || "UNEXPECTED_ERROR");
   return known.has(message) ? message : "UNEXPECTED_ERROR";
@@ -120,8 +133,8 @@ module.exports = {
   json,
   publicError,
   readJson,
+  requestFingerprint,
   rpc,
   sameOrigin,
   verifyTurnstile,
 };
-

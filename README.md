@@ -31,6 +31,7 @@ Este repositorio contiene su hub editorial y la infraestructura de campañas: un
 | Movimiento sutil | Intro visual sin controles; respeta ahorro de datos y movimiento reducido. |
 | Campaña viva | El EP. 03 evoluciona automáticamente entre expectativa, preestreno y disponibilidad. |
 | Sorteo integrado | Acceso dinámico desde el hub, registro centralizado y estados programados. |
+| Expectativa medible | Lista de espera privada y recordatorio de calendario sin revelar la dinámica antes de tiempo. |
 | Gestión protegida | Validación privada, lista congelada y selección auditable de ganadores. |
 | Preparado para compartir | Metadatos Open Graph, manifest, sitemap y favicon incluidos. |
 
@@ -42,6 +43,8 @@ La campaña de *El conejito Boris y sus monedas*, junto a **Weldyn Quezada**, vi
 - `/gestion/sorteos/ep03`: acceso privado del equipo, validación y exportación.
 - `/gestion/sorteos/ep03/en-vivo`: selección de dos ganadores y dos alternos.
 - `/api/sorteo/*`: funciones serverless para estado, seguridad, registro y administración.
+
+Antes de la revelación, la tarjeta del hub abre una lista de espera de correo sin mencionar el sorteo. Al completarla se ofrecen recordatorios de Google Calendar y Apple/Outlook. Cuando inicia la campaña, el mismo foco se transforma automáticamente en acceso directo a la participación.
 
 Los datos sensibles nunca se leen directamente desde el navegador. Supabase mantiene las tablas con Row Level Security, funciones con permisos mínimos, control de duplicados y una huella de la lista final. La publicación de resultados es una acción separada del sorteo para evitar exposiciones accidentales.
 
@@ -85,11 +88,12 @@ El sitio se despliega en Vercel desde la raíz del repositorio. Las ramas genera
 | `SUPABASE_URL` | URL del proyecto exclusivo de Primera Piedra. |
 | `SUPABASE_PUBLISHABLE_KEY` | Clave pública usada con RLS y funciones limitadas. |
 | `GIVEAWAY_CAMPAIGN_ID` | Campaña real o campaña aislada de Preview. |
-| `TURNSTILE_SITE_KEY` | Control anti-bot visible del formulario. |
-| `TURNSTILE_SECRET_KEY` | Validación anti-bot ejecutada solo en servidor. |
+| `TURNSTILE_SITE_KEY` | Refuerzo anti-bot opcional visible del formulario. |
+| `TURNSTILE_SECRET_KEY` | Validación opcional de Turnstile ejecutada solo en servidor. |
 | `GIVEAWAY_ADMIN_EMAILS` | Correos autorizados para recibir el acceso privado. |
+| `GIVEAWAY_HASH_SECRET` | Secreto de servidor para límites antiabuso sin guardar direcciones IP. |
 
-Nunca deben incorporarse secretos al repositorio. La migración crea una campaña de producción y otra de Preview para que las pruebas no contaminen la lista real.
+Nunca deben incorporarse secretos al repositorio. `.env.example` documenta las claves sin valores. La migración crea una campaña de producción y otra de Preview para que las pruebas no contaminen la lista real.
 
 La lógica del episodio usa hora de Ecuador (`UTC-5`): expectativa hasta el lunes 17 a las 09:00, preestreno hasta el martes 18 a las 09:00 y episodio disponible desde ese momento. Los CTAs generales llevan al canal oficial de YouTube.
 
@@ -98,11 +102,12 @@ El sorteo se abre automáticamente el martes 18 a las 07:00 y cierra el domingo 
 ## Privacidad y operación
 
 1. Una participación se identifica por contacto y usuario social normalizados; los duplicados se bloquean en base de datos.
-2. Los registros se revisan antes de congelar la lista válida.
-3. La huella SHA-256 demuestra qué lista se usó para seleccionar.
-4. La lista final exige al menos cuatro registros válidos; dos ganadores y dos alternos se guardan en una única operación.
-5. Solo después de revisión se publican nombre y usuario; los contactos permanecen privados.
-6. El premio se retira en Samborondón, previa coordinación con cada ganador.
+2. La lista de espera guarda únicamente correo, consentimiento, fecha y una huella antiabuso; no expone sus datos en el sitio público.
+3. Los registros se revisan antes de congelar la lista válida.
+4. La huella SHA-256 demuestra qué lista se usó para seleccionar.
+5. La lista final exige al menos cuatro registros válidos; dos ganadores y dos alternos se guardan en una única operación.
+6. Solo después de revisión se publican nombre y usuario; los contactos permanecen privados.
+7. El premio se retira en Samborondón, previa coordinación con cada ganador.
 
 ## Estándar de contribución
 

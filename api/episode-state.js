@@ -72,7 +72,7 @@ function getEpisodeState(now = new Date()) {
 function getGiveawayState(now = new Date()) {
   if (now < SCHEDULE.revealAt) return {
     stage: "teaser", kicker: "Muy pronto · EP. 03", title: "Algo especial se está construyendo",
-    summary: "Una experiencia para sembrar grandes aprendizajes.", action: "Descubrir pronto", url: SCHEDULE.giveawayUrl
+    summary: "Una experiencia para sembrar grandes aprendizajes.", action: "Activar recordatorio", url: "#recordatorio"
   };
   if (now < SCHEDULE.giveawayOpensAt) return {
     stage: "reveal", kicker: "Mañana · 07:00", title: "2 libros firmados · 2 ganadores",
@@ -92,7 +92,7 @@ function getPreviewGiveawayState(stage) {
   const states = {
     teaser: {
       stage: "teaser", kicker: "Muy pronto · EP. 03", title: "Algo especial se está construyendo",
-      summary: "Una experiencia para sembrar grandes aprendizajes.", action: "Descubrir pronto", url: "/sorteo/ep03?preview=upcoming"
+      summary: "Una experiencia para sembrar grandes aprendizajes.", action: "Activar recordatorio", url: "#recordatorio"
     },
     reveal: {
       stage: "reveal", kicker: "Mañana · 07:00", title: "2 libros firmados · 2 ganadores",

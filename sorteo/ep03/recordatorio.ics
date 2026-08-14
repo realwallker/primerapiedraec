@@ -1,0 +1,25 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Primera Piedra EC//EP03//ES
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:ep03-algo-especial-20260818@primerapiedraec.vercel.app
+DTSTAMP:20260814T000000Z
+DTSTART:20260818T120000Z
+DTEND:20260818T123000Z
+SUMMARY:Primera Piedra · Algo especial
+DESCRIPTION:Estamos construyendo algo especial. Descúbrelo en https://primerapiedraec.vercel.app/
+URL:https://primerapiedraec.vercel.app/
+BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+DESCRIPTION:Mañana Primera Piedra revela algo especial.
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-PT30M
+ACTION:DISPLAY
+DESCRIPTION:Primera Piedra comienza en 30 minutos.
+END:VALARM
+END:VEVENT
+END:VCALENDAR

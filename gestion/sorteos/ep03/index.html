@@ -43,9 +43,15 @@
           <article><span>VÁLIDOS</span><b id="stat-valid">0</b><small>entran al sorteo</small></article>
           <article><span>REVISAR</span><b id="stat-review">0</b><small>pendientes</small></article>
           <article><span>INVALIDADOS</span><b id="stat-invalid">0</b><small>excluidos</small></article>
+          <article><span>LISTA DE ESPERA</span><b id="stat-waitlist">0</b><small>recordatorios</small></article>
         </section>
 
         <section class="admin-grid">
+          <article class="admin-panel waitlist-panel">
+            <header class="panel-heading"><div><span class="eyebrow">EXPECTATIVA</span><h2>Lista de espera</h2></div><div class="panel-actions"><button class="secondary-button" id="export-waitlist-button">Exportar correos</button></div></header>
+            <div class="table-wrap waitlist-wrap"><table><thead><tr><th>Correo autorizado</th><th>Fecha</th></tr></thead><tbody id="waitlist-body"></tbody></table><div class="empty-state" id="waitlist-empty"><img src="/assets/brand/brand-symbol.svg" alt=""><b>La expectativa comienza aquí</b><p>Los correos que soliciten el recordatorio aparecerán de forma privada.</p></div></div>
+          </article>
+
           <article class="admin-panel">
             <header class="panel-heading"><div><span class="eyebrow">PARTICIPANTES</span><h2>Registros</h2></div><div class="panel-actions"><button class="secondary-button" id="refresh-button">Actualizar</button><button class="secondary-button" id="export-button">Exportar CSV</button></div></header>
             <div class="table-wrap"><table><thead><tr><th>Participante</th><th>Usuario</th><th>Contacto</th><th>Fecha</th><th>Estado</th></tr></thead><tbody id="entries-body"></tbody></table><div class="empty-state" id="entries-empty"><img src="/assets/brand/brand-symbol.svg" alt=""><b>Sin registros todavía</b><p>Cuando empiece el sorteo, las participaciones aparecerán aquí.</p></div></div>
