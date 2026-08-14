@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es-EC">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Gestión del sorteo EP. 03 | Primera Piedra</title>
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#3a2119">
+  <link rel="icon" href="/assets/brand/favicon-32.png" sizes="32x32">
+  <link rel="stylesheet" href="/sorteo/ep03/styles.css">
+  <link rel="stylesheet" href="/gestion/sorteos/ep03/admin.css">
+</head>
+<body class="management-body">
+  <div class="site-shell management-shell">
+    <article class="page-card admin-page">
+      <header class="brand-header">
+        <a class="brand-lockup" href="/" aria-label="Primera Piedra"><img src="/assets/brand/brand-symbol.svg" alt=""><div><strong>Primera Piedra</strong><span>Gestión</span></div></a>
+        <button class="secondary-button" id="logout-button" hidden>Cerrar sesión</button>
+      </header>
+
+      <main id="login-view" class="login-view">
+        <div class="login-card">
+          <span class="eyebrow">ACCESO PRIVADO</span>
+          <h1>Gestión del sorteo</h1>
+          <p>Ingresa con un correo autorizado. Te enviaremos un enlace seguro de un solo uso.</p>
+          <form id="login-form">
+            <label>Correo del equipo<input name="email" type="email" autocomplete="email" required placeholder="nombre@correo.com"></label>
+            <button class="submit-button" type="submit"><span>Enviar acceso seguro</span><span>→</span></button>
+          </form>
+          <div class="form-status" id="login-status" role="status" hidden></div>
+          <small>Los registros de participantes nunca son públicos.</small>
+        </div>
+      </main>
+
+      <main id="dashboard-view" hidden>
+        <section class="admin-hero">
+          <div><span class="eyebrow">SORTEO · EP. 03</span><h1>Centro de gestión</h1><p>Valida registros, congela la lista final y prepara la selección en vivo con trazabilidad.</p></div>
+          <div class="admin-status"><span class="review-dot"></span><b id="campaign-label">Conectando</b><small id="session-email">Sesión protegida</small></div>
+        </section>
+
+        <section class="stats-grid" aria-label="Resumen del sorteo">
+          <article><span>REGISTROS</span><b id="stat-total">0</b><small>recibidos</small></article>
+          <article><span>VÁLIDOS</span><b id="stat-valid">0</b><small>entran al sorteo</small></article>
+          <article><span>REVISAR</span><b id="stat-review">0</b><small>pendientes</small></article>
+          <article><span>INVALIDADOS</span><b id="stat-invalid">0</b><small>excluidos</small></article>
+        </section>
+
+        <section class="admin-grid">
+          <article class="admin-panel">
+            <header class="panel-heading"><div><span class="eyebrow">PARTICIPANTES</span><h2>Registros</h2></div><div class="panel-actions"><button class="secondary-button" id="refresh-button">Actualizar</button><button class="secondary-button" id="export-button">Exportar CSV</button></div></header>
+            <div class="table-wrap"><table><thead><tr><th>Participante</th><th>Usuario</th><th>Contacto</th><th>Fecha</th><th>Estado</th></tr></thead><tbody id="entries-body"></tbody></table><div class="empty-state" id="entries-empty"><img src="/assets/brand/brand-symbol.svg" alt=""><b>Sin registros todavía</b><p>Cuando empiece el sorteo, las participaciones aparecerán aquí.</p></div></div>
+          </article>
+
+          <article class="admin-panel audit-panel">
+            <header class="panel-heading"><div><span class="eyebrow">CONTROL</span><h2>Lista final</h2></div></header>
+            <div class="freeze-ready" id="freeze-ready">
+              <ol><li><span>1</span><p><b>Revisa duplicados y datos</b><small>Marca cada registro dudoso antes de cerrar.</small></p></li><li><span>2</span><p><b>Congela la lista válida</b><small>Después ya no se podrán alterar participantes.</small></p></li><li><span>3</span><p><b>Abre la vista en vivo</b><small>La selección usa exactamente esa lista.</small></p></li></ol>
+              <button class="submit-button" id="freeze-button"><span>Congelar lista final</span><span>→</span></button>
+              <p class="minimum-note">Se necesitan al menos 4 registros válidos: 2 ganadores y 2 alternos.</p>
+            </div>
+            <div class="snapshot-ready" id="snapshot-ready" hidden><span class="snapshot-seal">✓</span><span class="eyebrow">LISTA CONGELADA</span><h3 id="snapshot-count">0 participantes</h3><p>La huella permite demostrar que la lista no cambió antes del sorteo.</p><dl><div><dt>Huella</dt><dd id="snapshot-hash">—</dd></div><div><dt>Fecha</dt><dd id="snapshot-date">—</dd></div></dl><a class="submit-button live-link" href="/gestion/sorteos/ep03/en-vivo"><span>Abrir modo en vivo</span><span>→</span></a></div>
+          </article>
+        </section>
+        <div class="admin-message form-status" id="admin-status" role="status" hidden></div>
+      </main>
+      <footer><img src="/assets/brand/brand-symbol.svg" alt=""><p><b>Primera Piedra · Gestión privada</b><span>Datos protegidos y acceso restringido</span></p><a href="/sorteo/ep03">Ver página pública</a></footer>
+    </article>
+  </div>
+  <script src="/gestion/sorteos/ep03/admin.js" defer></script>
+</body>
+</html>

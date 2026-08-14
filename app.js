@@ -35,6 +35,17 @@
       const description = document.querySelector('meta[name="description"]');
       if (description) description.content = episode.metaDescription;
     }
+
+    const giveaway = state.giveaway;
+    const giveawayCard = document.getElementById("giveaway-card");
+    if (giveaway && giveawayCard) {
+      giveawayCard.dataset.stage = giveaway.stage || "teaser";
+      if (giveaway.url) giveawayCard.href = giveaway.url;
+      setText("giveaway-kicker", giveaway.kicker);
+      setText("giveaway-title", giveaway.title);
+      setText("giveaway-summary", giveaway.summary);
+      setText("giveaway-action", giveaway.action);
+    }
   }
 
   function setupVideo() {

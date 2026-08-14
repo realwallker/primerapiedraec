@@ -1,6 +1,9 @@
 const SCHEDULE = {
   revealAt: new Date("2026-08-17T09:00:00-05:00"),
   publishAt: new Date("2026-08-18T09:00:00-05:00"),
+  giveawayOpensAt: new Date("2026-08-18T07:00:00-05:00"),
+  giveawayClosesAt: new Date("2026-08-23T20:00:00-05:00"),
+  giveawayUrl: "/sorteo/ep03",
   channelUrl: "https://www.youtube.com/@primerapiedraec",
   spotifyUrl: "https://open.spotify.com/show/033mvQVP3Z24000ll5EqMz"
 };
@@ -59,9 +62,30 @@ function live() {
 }
 
 function getEpisodeState(now = new Date()) {
-  if (now < SCHEDULE.revealAt) return teaser();
-  if (now < SCHEDULE.publishAt) return reveal();
-  return live();
+  let state;
+  if (now < SCHEDULE.revealAt) state = teaser();
+  else if (now < SCHEDULE.publishAt) state = reveal();
+  else state = live();
+  return { ...state, giveaway: getGiveawayState(now) };
+}
+
+function getGiveawayState(now = new Date()) {
+  if (now < SCHEDULE.revealAt) return {
+    stage: "teaser", kicker: "Muy pronto · EP. 03", title: "Algo especial se está construyendo",
+    summary: "Una experiencia para sembrar grandes aprendizajes.", action: "Descubrir pronto", url: SCHEDULE.giveawayUrl
+  };
+  if (now < SCHEDULE.giveawayOpensAt) return {
+    stage: "reveal", kicker: "Mañana · 07:00", title: "2 libros firmados · 2 ganadores",
+    summary: "La participación se habilita el martes por la mañana.", action: "Ver adelanto", url: SCHEDULE.giveawayUrl
+  };
+  if (now < SCHEDULE.giveawayClosesAt) return {
+    stage: "open", kicker: "Sorteo abierto · hasta el domingo 23", title: "Participa por uno de 2 libros firmados",
+    summary: "Completa el recorrido y registra tu participación gratuita.", action: "Participar ahora", url: SCHEDULE.giveawayUrl
+  };
+  return {
+    stage: "closed", kicker: "Sorteo cerrado", title: "Gracias por construir esta conversación",
+    summary: "Validamos participaciones y pronto anunciaremos ganadores.", action: "Ver estado", url: SCHEDULE.giveawayUrl
+  };
 }
 
 function handler(request, response) {
@@ -73,4 +97,5 @@ function handler(request, response) {
 
 module.exports = handler;
 module.exports.getEpisodeState = getEpisodeState;
+module.exports.getGiveawayState = getGiveawayState;
 module.exports.SCHEDULE = SCHEDULE;
