@@ -196,6 +196,12 @@
         try { localStorage.setItem(waitlistLocalKey, "1"); } catch (_) {}
         setSpotlightSessionSeen();
         form.hidden = true;
+        const successCopy = document.getElementById("giveaway-reminder-success-copy");
+        if (successCopy) {
+          successCopy.textContent = payload.emailSent
+            ? "Te enviamos la confirmación a tu correo. También puedes agendarlo aquí."
+            : "Tu correo quedó guardado. También puedes agendar el recordatorio aquí.";
+        }
         document.getElementById("giveaway-reminder-success").hidden = false;
       } catch (_) {
         status.className = "giveaway-reminder-status is-error";
