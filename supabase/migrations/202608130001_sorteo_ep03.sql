@@ -62,6 +62,12 @@ create table if not exists public.giveaway_admins (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.giveaway_secrets (
+  campaign_id text primary key references public.giveaway_campaigns(id) on delete restrict,
+  fingerprint_key bytea not null default gen_random_bytes(32),
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.giveaway_waitlist (
   id uuid primary key default gen_random_uuid(),
   campaign_id text not null references public.giveaway_campaigns(id) on delete restrict,
@@ -104,9 +110,13 @@ create table if not exists public.giveaway_draws (
   published_at timestamptz
 );
 
+create index if not exists giveaway_draws_campaign_idx
+  on public.giveaway_draws (campaign_id);
+
 alter table public.giveaway_campaigns enable row level security;
 alter table public.giveaway_entries enable row level security;
 alter table public.giveaway_admins enable row level security;
+alter table public.giveaway_secrets enable row level security;
 alter table public.giveaway_waitlist enable row level security;
 alter table public.giveaway_snapshots enable row level security;
 alter table public.giveaway_draws enable row level security;
@@ -114,9 +124,18 @@ alter table public.giveaway_draws enable row level security;
 revoke all on public.giveaway_campaigns from anon, authenticated;
 revoke all on public.giveaway_entries from anon, authenticated;
 revoke all on public.giveaway_admins from anon, authenticated;
+revoke all on public.giveaway_secrets from anon, authenticated;
 revoke all on public.giveaway_waitlist from anon, authenticated;
 revoke all on public.giveaway_snapshots from anon, authenticated;
 revoke all on public.giveaway_draws from anon, authenticated;
+
+create policy giveaway_campaigns_deny_direct on public.giveaway_campaigns as restrictive for all to anon, authenticated using (false) with check (false);
+create policy giveaway_entries_deny_direct on public.giveaway_entries as restrictive for all to anon, authenticated using (false) with check (false);
+create policy giveaway_admins_deny_direct on public.giveaway_admins as restrictive for all to anon, authenticated using (false) with check (false);
+create policy giveaway_secrets_deny_direct on public.giveaway_secrets as restrictive for all to anon, authenticated using (false) with check (false);
+create policy giveaway_waitlist_deny_direct on public.giveaway_waitlist as restrictive for all to anon, authenticated using (false) with check (false);
+create policy giveaway_snapshots_deny_direct on public.giveaway_snapshots as restrictive for all to anon, authenticated using (false) with check (false);
+create policy giveaway_draws_deny_direct on public.giveaway_draws as restrictive for all to anon, authenticated using (false) with check (false);
 
 create or replace function public.is_giveaway_admin(p_require_write boolean default false)
 returns boolean
@@ -133,8 +152,7 @@ as $$
   );
 $$;
 
-revoke all on function public.is_giveaway_admin(boolean) from public;
-grant execute on function public.is_giveaway_admin(boolean) to authenticated;
+revoke all on function public.is_giveaway_admin(boolean) from public, anon, authenticated;
 
 create or replace function public.get_giveaway_public_state(p_campaign_id text)
 returns jsonb
@@ -208,7 +226,7 @@ create or replace function public.register_giveaway_entry(
   p_privacy_confirmed boolean,
   p_public_announcement_confirmed boolean,
   p_social_visits jsonb,
-  p_request_hash text default '',
+  p_request_context text default '',
   p_source text default 'web'
 )
 returns jsonb
@@ -220,6 +238,8 @@ declare
   c public.giveaway_campaigns%rowtype;
   entry_id uuid := gen_random_uuid();
   code text;
+  fingerprint_key bytea;
+  computed_request_hash text;
   clean_name text := trim(regexp_replace(coalesce(p_full_name, ''), '\s+', ' ', 'g'));
   clean_city text := trim(regexp_replace(coalesce(p_city, ''), '\s+', ' ', 'g'));
   clean_handle text := lower(regexp_replace(trim(coalesce(p_social_handle, '')), '^@', ''));
@@ -227,6 +247,11 @@ declare
 begin
   select * into c from public.giveaway_campaigns where id = p_campaign_id for share;
   if not found then raise exception using errcode = 'P0001', message = 'CAMPAIGN_NOT_FOUND'; end if;
+  select s.fingerprint_key into fingerprint_key from public.giveaway_secrets s where s.campaign_id = c.id;
+  if not found or length(p_request_context) < 3 or length(p_request_context) > 600 then
+    raise exception using errcode = 'P0001', message = 'ANTI_ABUSE_NOT_CONFIGURED';
+  end if;
+  computed_request_hash := encode(extensions.hmac(convert_to(p_request_context, 'UTF8'), fingerprint_key, 'sha256'), 'hex');
   if not (c.status = 'open' or (c.status = 'scheduled' and now() >= c.opens_at and now() < c.closes_at)) then
     raise exception using errcode = 'P0001', message = 'CAMPAIGN_NOT_OPEN';
   end if;
@@ -250,8 +275,7 @@ begin
     and coalesce((p_social_visits ->> 'tiktok')::boolean, false)) then
     raise exception using errcode = 'P0001', message = 'SOCIAL_ROUTE_REQUIRED';
   end if;
-  if length(p_request_hash) <> 64 then raise exception using errcode = 'P0001', message = 'ANTI_ABUSE_NOT_CONFIGURED'; end if;
-  if (select count(*) from public.giveaway_entries where campaign_id = c.id and request_hash = p_request_hash and created_at >= now() - interval '24 hours') >= 8 then
+  if (select count(*) from public.giveaway_entries where campaign_id = c.id and request_hash = computed_request_hash and created_at >= now() - interval '24 hours') >= 8 then
     raise exception using errcode = 'P0001', message = 'TOO_MANY_REQUESTS';
   end if;
 
@@ -265,9 +289,9 @@ begin
   ) values (
     entry_id, c.id, code, clean_name, clean_city, p_social_network, '@' || clean_handle,
     p_contact_type, clean_contact,
-    encode(digest(c.id || ':contact:' || clean_contact, 'sha256'), 'hex'),
-    encode(digest(c.id || ':social:' || p_social_network || ':' || clean_handle, 'sha256'), 'hex'),
-    true, true, true, true, true, true, true, p_social_visits, c.terms_version, left(coalesce(p_source, 'web'), 40), p_request_hash
+    encode(extensions.digest(c.id || ':contact:' || clean_contact, 'sha256'), 'hex'),
+    encode(extensions.digest(c.id || ':social:' || p_social_network || ':' || clean_handle, 'sha256'), 'hex'),
+    true, true, true, true, true, true, true, p_social_visits, c.terms_version, left(coalesce(p_source, 'web'), 40), computed_request_hash
   );
 
   return jsonb_build_object('ok', true, 'registrationCode', code, 'createdAt', now());
@@ -284,7 +308,7 @@ create or replace function public.join_giveaway_waitlist(
   p_campaign_id text,
   p_email text,
   p_consent boolean,
-  p_request_hash text default '',
+  p_request_context text default '',
   p_source text default 'hub'
 )
 returns jsonb
@@ -295,20 +319,26 @@ as $$
 declare
   c public.giveaway_campaigns%rowtype;
   clean_email text := lower(regexp_replace(trim(coalesce(p_email, '')), '\s+', '', 'g'));
+  fingerprint_key bytea;
+  computed_request_hash text;
 begin
   select * into c from public.giveaway_campaigns where id = p_campaign_id;
   if not found or (now() >= c.opens_at and c.id !~ '-preview$') then raise exception using errcode = 'P0001', message = 'WAITLIST_CLOSED'; end if;
+  select s.fingerprint_key into fingerprint_key from public.giveaway_secrets s where s.campaign_id = c.id;
+  if not found or length(p_request_context) < 3 or length(p_request_context) > 600 then
+    raise exception using errcode = 'P0001', message = 'ANTI_ABUSE_NOT_CONFIGURED';
+  end if;
+  computed_request_hash := encode(extensions.hmac(convert_to(p_request_context, 'UTF8'), fingerprint_key, 'sha256'), 'hex');
   if clean_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' or length(clean_email) > 150 then
     raise exception using errcode = 'P0001', message = 'INVALID_EMAIL';
   end if;
   if not coalesce(p_consent, false) then raise exception using errcode = 'P0001', message = 'WAITLIST_CONSENT_REQUIRED'; end if;
-  if length(p_request_hash) <> 64 then raise exception using errcode = 'P0001', message = 'ANTI_ABUSE_NOT_CONFIGURED'; end if;
-  if (select count(*) from public.giveaway_waitlist where campaign_id = c.id and request_hash = p_request_hash and consent_at >= now() - interval '24 hours') >= 15 then
+  if (select count(*) from public.giveaway_waitlist where campaign_id = c.id and request_hash = computed_request_hash and consent_at >= now() - interval '24 hours') >= 15 then
     raise exception using errcode = 'P0001', message = 'TOO_MANY_REQUESTS';
   end if;
 
   insert into public.giveaway_waitlist (campaign_id, email, email_hash, consent_confirmed, source, request_hash)
-  values (c.id, clean_email, encode(digest(c.id || ':waitlist:' || clean_email, 'sha256'), 'hex'), true, left(coalesce(p_source, 'hub'), 40), p_request_hash)
+  values (c.id, clean_email, encode(extensions.digest(c.id || ':waitlist:' || clean_email, 'sha256'), 'hex'), true, left(coalesce(p_source, 'hub'), 40), computed_request_hash)
   on conflict (campaign_id, email_hash) do nothing;
 
   return jsonb_build_object('ok', true);
@@ -346,7 +376,7 @@ begin
 end;
 $$;
 
-revoke all on function public.admin_giveaway_entries(text) from public;
+revoke all on function public.admin_giveaway_entries(text) from public, anon, authenticated;
 grant execute on function public.admin_giveaway_entries(text) to authenticated;
 
 create or replace function public.admin_set_entry_status(p_entry_id uuid, p_status text)
@@ -367,7 +397,7 @@ begin
 end;
 $$;
 
-revoke all on function public.admin_set_entry_status(uuid,text) from public;
+revoke all on function public.admin_set_entry_status(uuid,text) from public, anon, authenticated;
 grant execute on function public.admin_set_entry_status(uuid,text) to authenticated;
 
 create or replace function public.admin_freeze_giveaway(p_campaign_id text)
@@ -390,14 +420,14 @@ begin
   if coalesce(array_length(ids, 1), 0) < 4 then raise exception using errcode = 'P0001', message = 'NOT_ENOUGH_VALID_ENTRIES'; end if;
 
   insert into public.giveaway_snapshots (campaign_id, entry_ids, entry_count, fingerprint, frozen_by)
-  values (p_campaign_id, ids, array_length(ids, 1), encode(digest(array_to_string(ids, ','), 'sha256'), 'hex'), admin_email)
+  values (p_campaign_id, ids, array_length(ids, 1), encode(extensions.digest(array_to_string(ids, ','), 'sha256'), 'hex'), admin_email)
   returning * into snap;
   update public.giveaway_campaigns set status = 'closed' where id = p_campaign_id and status in ('scheduled', 'open');
   return jsonb_build_object('id', snap.id, 'entryCount', snap.entry_count, 'fingerprint', snap.fingerprint, 'createdAt', snap.created_at);
 end;
 $$;
 
-revoke all on function public.admin_freeze_giveaway(text) from public;
+revoke all on function public.admin_freeze_giveaway(text) from public, anon, authenticated;
 grant execute on function public.admin_freeze_giveaway(text) to authenticated;
 
 create or replace function public.admin_draw_giveaway(p_campaign_id text)
@@ -410,7 +440,7 @@ declare
   snap public.giveaway_snapshots%rowtype;
   existing public.giveaway_draws%rowtype;
   new_draw public.giveaway_draws%rowtype;
-  draw_seed text := encode(gen_random_bytes(32), 'hex');
+  draw_seed text := encode(extensions.gen_random_bytes(32), 'hex');
   winner_data jsonb;
   alternate_data jsonb;
   admin_email text := lower(coalesce(auth.jwt() ->> 'email', 'unknown'));
@@ -422,7 +452,7 @@ begin
   if not found then raise exception using errcode = 'P0001', message = 'SNAPSHOT_REQUIRED'; end if;
 
   with ranked as (
-    select e.*, row_number() over (order by digest(e.id::text || draw_seed, 'sha256')) as position
+    select e.*, row_number() over (order by extensions.digest(e.id::text || draw_seed, 'sha256')) as position
     from public.giveaway_entries e where e.id = any(snap.entry_ids)
   )
   select
@@ -438,7 +468,7 @@ begin
 end;
 $$;
 
-revoke all on function public.admin_draw_giveaway(text) from public;
+revoke all on function public.admin_draw_giveaway(text) from public, anon, authenticated;
 grant execute on function public.admin_draw_giveaway(text) to authenticated;
 
 create or replace function public.admin_publish_giveaway(p_campaign_id text)
@@ -459,7 +489,7 @@ begin
 end;
 $$;
 
-revoke all on function public.admin_publish_giveaway(text) from public;
+revoke all on function public.admin_publish_giveaway(text) from public, anon, authenticated;
 grant execute on function public.admin_publish_giveaway(text) to authenticated;
 
 insert into public.giveaway_campaigns (id, title, opens_at, closes_at, draw_at, status, terms_version)
@@ -472,6 +502,10 @@ on conflict (id) do update set
   closes_at = excluded.closes_at,
   draw_at = excluded.draw_at,
   terms_version = excluded.terms_version;
+
+insert into public.giveaway_secrets (campaign_id)
+values ('ep03-boris-2026'), ('ep03-boris-2026-preview')
+on conflict (campaign_id) do nothing;
 
 insert into public.giveaway_admins (email, display_name, role)
 values ('wallkeron60hz@gmail.com', 'Wallker', 'admin')

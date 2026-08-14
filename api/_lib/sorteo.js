@@ -1,9 +1,10 @@
 "use strict";
 
-const crypto = require("node:crypto");
-
 const DEFAULT_PRODUCTION_CAMPAIGN = "ep03-boris-2026";
 const DEFAULT_PREVIEW_CAMPAIGN = "ep03-boris-2026-preview";
+const DEFAULT_SUPABASE_URL = "https://bloijkrgsxglnqabpaqd.supabase.co";
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_NEFLDM8Rx9fYDhfn5gij1A_1OxOf1iy";
+const DEFAULT_ADMIN_EMAILS = "wallkeron60hz@gmail.com";
 
 function json(response, status, payload, cacheControl = "no-store") {
   response.statusCode = status;
@@ -16,12 +17,12 @@ function json(response, status, payload, cacheControl = "no-store") {
 function getConfig() {
   const isPreview = process.env.VERCEL_ENV === "preview";
   return {
-    supabaseUrl: String(process.env.SUPABASE_URL || "").replace(/\/$/, ""),
-    supabaseKey: process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || "",
+    supabaseUrl: String(process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL).replace(/\/$/, ""),
+    supabaseKey: process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || DEFAULT_SUPABASE_PUBLISHABLE_KEY,
     campaignId: process.env.GIVEAWAY_CAMPAIGN_ID || (isPreview ? DEFAULT_PREVIEW_CAMPAIGN : DEFAULT_PRODUCTION_CAMPAIGN),
+    adminEmails: process.env.GIVEAWAY_ADMIN_EMAILS || DEFAULT_ADMIN_EMAILS,
     turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || "",
     turnstileSecret: process.env.TURNSTILE_SECRET_KEY || "",
-    hashSecret: process.env.GIVEAWAY_HASH_SECRET || "",
     isPreview,
   };
 }
@@ -99,12 +100,10 @@ async function verifyTurnstile(token, remoteIp) {
   return result.success === true;
 }
 
-function requestFingerprint(request) {
-  const config = getConfig();
-  if (!config.hashSecret) return "";
+function requestContext(request) {
   const ip = String(request.headers["x-forwarded-for"] || request.socket?.remoteAddress || "unknown").split(",")[0].trim();
   const userAgent = String(request.headers["user-agent"] || "unknown").slice(0, 300);
-  return crypto.createHmac("sha256", config.hashSecret).update(`${ip}|${userAgent}`).digest("hex");
+  return `${ip}|${userAgent}`;
 }
 
 function bearerToken(request) {
@@ -133,7 +132,7 @@ module.exports = {
   json,
   publicError,
   readJson,
-  requestFingerprint,
+  requestContext,
   rpc,
   sameOrigin,
   verifyTurnstile,

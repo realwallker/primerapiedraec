@@ -10,7 +10,7 @@ module.exports = async function handler(request, response) {
   try {
     const body = await readJson(request, 3_000);
     const email = String(body.email || "").trim().toLowerCase();
-    const allowed = String(process.env.GIVEAWAY_ADMIN_EMAILS || "")
+    const allowed = String(config.adminEmails || "")
       .split(",").map((item) => item.trim().toLowerCase()).filter(Boolean);
     if (!email || !email.includes("@")) return json(response, 400, { error: "INVALID_EMAIL" });
 

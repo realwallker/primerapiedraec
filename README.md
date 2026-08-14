@@ -91,9 +91,8 @@ El sitio se despliega en Vercel desde la raíz del repositorio. Las ramas genera
 | `TURNSTILE_SITE_KEY` | Refuerzo anti-bot opcional visible del formulario. |
 | `TURNSTILE_SECRET_KEY` | Validación opcional de Turnstile ejecutada solo en servidor. |
 | `GIVEAWAY_ADMIN_EMAILS` | Correos autorizados para recibir el acceso privado. |
-| `GIVEAWAY_HASH_SECRET` | Secreto de servidor para límites antiabuso sin guardar direcciones IP. |
 
-Nunca deben incorporarse secretos al repositorio. `.env.example` documenta las claves sin valores. La migración crea una campaña de producción y otra de Preview para que las pruebas no contaminen la lista real.
+Nunca deben incorporarse secretos al repositorio. `.env.example` documenta las claves opcionales sin valores. La URL y la clave publicable del proyecto —diseñadas para ser visibles en clientes— tienen valores seguros por defecto; RLS y las funciones limitadas protegen los datos. La migración crea una campaña de producción y otra de Preview para que las pruebas no contaminen la lista real.
 
 La lógica del episodio usa hora de Ecuador (`UTC-5`): expectativa hasta el lunes 17 a las 09:00, preestreno hasta el martes 18 a las 09:00 y episodio disponible desde ese momento. Los CTAs generales llevan al canal oficial de YouTube.
 

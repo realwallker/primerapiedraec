@@ -1,7 +1,7 @@
 "use strict";
 
 const {
-  getConfig, isConfigured, json, publicError, readJson, requestFingerprint, rpc, sameOrigin, verifyTurnstile,
+  getConfig, isConfigured, json, publicError, readJson, requestContext, rpc, sameOrigin, verifyTurnstile,
 } = require("../_lib/sorteo");
 
 module.exports = async function handler(request, response) {
@@ -9,8 +9,6 @@ module.exports = async function handler(request, response) {
   if (!sameOrigin(request)) return json(response, 403, { error: "ORIGIN_NOT_ALLOWED" });
   const config = getConfig();
   if (!isConfigured(config)) return json(response, 503, { error: "SERVICE_NOT_CONFIGURED" });
-  if (!config.hashSecret && !config.isPreview) return json(response, 503, { error: "ANTI_ABUSE_NOT_CONFIGURED" });
-
   try {
     const body = await readJson(request);
     if (body.website) return json(response, 400, { error: "INVALID_SUBMISSION" });
@@ -34,7 +32,7 @@ module.exports = async function handler(request, response) {
       p_privacy_confirmed: body.privacyConfirmed === true,
       p_public_announcement_confirmed: body.publicAnnouncementConfirmed === true,
       p_social_visits: body.socialVisits || {},
-      p_request_hash: requestFingerprint(request),
+      p_request_context: requestContext(request),
       p_source: config.isPreview ? "vercel-preview" : "production-web",
     });
     return json(response, 201, result);
