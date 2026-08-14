@@ -147,12 +147,26 @@
     const button = event.currentTarget.querySelector("button");
     button.disabled = true;
     try {
-      const email = new FormData(event.currentTarget).get("email");
-      const response = await fetch("/api/sorteo/admin/acceso", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) });
+      const values = new FormData(event.currentTarget);
+      const response = await fetch("/api/sorteo/admin/acceso", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: values.get("email"), password: values.get("password") }),
+      });
       if (!response.ok) throw new Error();
-      status.hidden = false; status.className = "form-status success"; status.textContent = "Si el correo está autorizado, recibirás un enlace seguro en unos instantes.";
+      const auth = await response.json();
+      saveSession({
+        accessToken: auth.accessToken,
+        refreshToken: auth.refreshToken,
+        expiresAt: Date.now() + Number(auth.expiresIn || 3600) * 1000,
+      });
+      await loadDashboard();
+      document.getElementById("login-view").hidden = true;
+      document.getElementById("dashboard-view").hidden = false;
+      document.getElementById("logout-button").hidden = false;
     } catch (_) {
-      status.hidden = false; status.className = "form-status error"; status.textContent = "No pudimos enviar el acceso. Intenta nuevamente.";
+      clearSession();
+      status.hidden = false; status.className = "form-status error"; status.textContent = "El correo o la clave privada no son válidos.";
     } finally { button.disabled = false; }
   });
 

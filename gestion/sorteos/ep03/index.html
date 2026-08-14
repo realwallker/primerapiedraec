@@ -22,10 +22,11 @@
         <div class="login-card">
           <span class="eyebrow">ACCESO PRIVADO</span>
           <h1>Gestión del sorteo</h1>
-          <p>Ingresa con un correo autorizado. Te enviaremos un enlace seguro de un solo uso.</p>
+          <p>Ingresa con el correo autorizado y la clave privada del equipo.</p>
           <form id="login-form">
             <label>Correo del equipo<input name="email" type="email" autocomplete="email" required placeholder="nombre@correo.com"></label>
-            <button class="submit-button" type="submit"><span>Enviar acceso seguro</span><span>→</span></button>
+            <label>Clave privada<input name="password" type="password" autocomplete="current-password" minlength="8" required placeholder="••••••••"></label>
+            <button class="submit-button" type="submit"><span>Entrar al panel</span><span>→</span></button>
           </form>
           <div class="form-status" id="login-status" role="status" hidden></div>
           <small>Los registros de participantes nunca son públicos.</small>
