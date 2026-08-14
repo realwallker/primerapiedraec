@@ -96,12 +96,12 @@
       <form class="giveaway-reminder-form" id="giveaway-reminder-form" hidden>
         <label for="giveaway-reminder-email">Tu correo</label>
         <div><input id="giveaway-reminder-email" name="email" type="email" autocomplete="email" maxlength="150" placeholder="nombre@correo.com" required><button type="submit">Avisarme <svg aria-hidden="true"><use href="#arrow"/></svg></button></div>
-        <label class="giveaway-reminder-consent"><input name="consent" type="checkbox" required><span>Acepto recibir un único aviso sobre esta edición.</span></label>
+        <label class="giveaway-reminder-consent"><input name="consent" type="checkbox" required><span>Acepto recibir esta confirmación y un único aviso sobre esta edición.</span></label>
         <label class="giveaway-reminder-honeypot" aria-hidden="true">Sitio web<input name="website" tabindex="-1" autocomplete="off"></label>
         <p class="giveaway-reminder-status" id="giveaway-reminder-status" role="status" hidden></p>
       </form>
       <div class="giveaway-reminder-success" id="giveaway-reminder-success" hidden>
-        <b>Listo, estás en la lista.</b><span>Activa ahora el recordatorio en tu calendario.</span>
+        <b>Listo, estás en la lista.</b><span id="giveaway-reminder-success-copy">Activa ahora el recordatorio en tu calendario.</span>
         <div><a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Primera%20Piedra%20%C2%B7%20Algo%20especial&amp;dates=20260818T120000Z%2F20260818T123000Z&amp;details=Estamos%20construyendo%20algo%20especial.%20Desc%C3%BAbrelo%20en%20https%3A%2F%2Fprimerapiedraec.vercel.app%2F&amp;location=https%3A%2F%2Fprimerapiedraec.vercel.app%2F" target="_blank" rel="noopener noreferrer">Google Calendar</a><a href="/sorteo/ep03/recordatorio.ics" download>Apple / Outlook</a></div>
       </div>
     </aside>
