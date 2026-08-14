@@ -67,7 +67,10 @@
   async function loadEpisodeState() {
     if (location.protocol === "file:") return;
     try {
-      const response = await fetch(config.episodeStateUrl || "/api/episode-state", { cache: "no-store" });
+      const endpoint = new URL(config.episodeStateUrl || "/api/episode-state", location.origin);
+      const giveawayPreview = new URLSearchParams(location.search).get("giveaway");
+      if (giveawayPreview) endpoint.searchParams.set("giveaway", giveawayPreview);
+      const response = await fetch(endpoint, { cache: "no-store" });
       if (!response.ok) return;
       applyEpisodeState(await response.json());
     } catch (_) {
