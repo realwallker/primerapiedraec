@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /gestion/
+Disallow: /api/
+Disallow: /sorteo/
 
 Sitemap: https://primerapiedraec.vercel.app/sitemap.xml
