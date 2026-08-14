@@ -83,7 +83,20 @@ async function sendReminderConfirmation(recipientEmail) {
   });
 
   if (!response.ok) {
-    throw new Error("EMAIL_DELIVERY_FAILED");
+    const providerText = await response.text();
+    let providerReason = "provider-rejected-request";
+    try {
+      const payload = providerText ? JSON.parse(providerText) : {};
+      providerReason = String(
+        payload?.error?.message || payload?.message || payload?.error || payload?.code || providerReason
+      );
+    } catch (_) {}
+    const error = new Error("EMAIL_DELIVERY_FAILED");
+    error.providerStatus = response.status;
+    error.providerReason = providerReason
+      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[email]")
+      .slice(0, 180);
+    throw error;
   }
 
   return true;

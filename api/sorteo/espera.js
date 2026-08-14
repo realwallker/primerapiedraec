@@ -34,6 +34,8 @@ module.exports = async function handler(request, response) {
         console.error("WAITLIST_CONFIRMATION_FAILED", {
           campaign: config.campaignId,
           reason: String(emailError?.message || "UNKNOWN_EMAIL_ERROR"),
+          providerStatus: Number(emailError?.providerStatus || 0) || undefined,
+          providerReason: String(emailError?.providerReason || "provider-detail-unavailable"),
         });
       }
     }
