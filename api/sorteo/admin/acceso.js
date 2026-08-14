@@ -10,22 +10,31 @@ module.exports = async function handler(request, response) {
   try {
     const body = await readJson(request, 3_000);
     const email = String(body.email || "").trim().toLowerCase();
+    const password = String(body.password || "");
     const allowed = String(config.adminEmails || "")
       .split(",").map((item) => item.trim().toLowerCase()).filter(Boolean);
-    if (!email || !email.includes("@")) return json(response, 400, { error: "INVALID_EMAIL" });
+    if (!email || !email.includes("@") || password.length < 8) {
+      return json(response, 401, { error: "INVALID_ACCESS" });
+    }
 
-    // Always return the same public response to avoid revealing the admin allowlist.
-    if (!allowed.includes(email)) return json(response, 202, { ok: true });
+    // Keep the same response for unknown emails and invalid credentials.
+    if (!allowed.includes(email)) return json(response, 401, { error: "INVALID_ACCESS" });
 
-    const protocol = request.headers["x-forwarded-proto"] || "https";
-    const redirectTo = `${protocol}://${request.headers.host}/gestion/sorteos/ep03`;
-    const authResponse = await fetch(`${config.supabaseUrl}/auth/v1/otp?redirect_to=${encodeURIComponent(redirectTo)}`, {
+    const authResponse = await fetch(`${config.supabaseUrl}/auth/v1/token?grant_type=password`, {
       method: "POST",
       headers: { apikey: config.supabaseKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ email, create_user: true, data: {}, gotrue_meta_security: {} }),
+      body: JSON.stringify({ email, password }),
     });
-    if (!authResponse.ok) return json(response, 502, { error: "AUTH_EMAIL_FAILED" });
-    return json(response, 202, { ok: true });
+    if (!authResponse.ok) return json(response, 401, { error: "INVALID_ACCESS" });
+    const auth = await authResponse.json();
+    if (String(auth.user?.email || "").toLowerCase() !== email || !auth.access_token || !auth.refresh_token) {
+      return json(response, 401, { error: "INVALID_ACCESS" });
+    }
+    return json(response, 200, {
+      accessToken: auth.access_token,
+      refreshToken: auth.refresh_token,
+      expiresIn: Number(auth.expires_in || 3600),
+    });
   } catch (_) {
     return json(response, 400, { error: "INVALID_REQUEST" });
   }
