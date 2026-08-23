@@ -2,7 +2,7 @@ const SCHEDULE = {
   revealAt: new Date("2026-08-17T09:00:00-05:00"),
   publishAt: new Date("2026-08-18T09:00:00-05:00"),
   giveawayOpensAt: new Date("2026-08-18T07:00:00-05:00"),
-  giveawayClosesAt: new Date("2026-08-23T20:00:00-05:00"),
+  giveawayClosesAt: new Date("2026-08-31T20:00:00-05:00"),
   giveawayUrl: "/sorteo/ep03",
   channelUrl: "https://www.youtube.com/@primerapiedraec",
   spotifyUrl: "https://open.spotify.com/show/033mvQVP3Z24000ll5EqMz"
@@ -79,7 +79,7 @@ function getGiveawayState(now = new Date()) {
     summary: "La participación se habilita el martes por la mañana.", action: "Ver adelanto", url: SCHEDULE.giveawayUrl
   };
   if (now < SCHEDULE.giveawayClosesAt) return {
-    stage: "open", kicker: "Sorteo abierto · hasta el domingo 23", title: "Participa por uno de 2 libros firmados",
+    stage: "open", kicker: "Sorteo abierto · hasta el lunes 31", title: "Participa por uno de 2 libros firmados",
     summary: "Completa el recorrido y registra tu participación gratuita.", action: "Participar ahora", url: SCHEDULE.giveawayUrl
   };
   return {
@@ -99,7 +99,7 @@ function getPreviewGiveawayState(stage) {
       summary: "La participación se habilita el martes por la mañana.", action: "Ver adelanto", url: "/sorteo/ep03?preview=upcoming"
     },
     open: {
-      stage: "open", kicker: "Sorteo abierto · hasta el domingo 23", title: "Participa por uno de 2 libros firmados",
+      stage: "open", kicker: "Sorteo abierto · hasta el lunes 31", title: "Participa por uno de 2 libros firmados",
       summary: "Completa el recorrido y registra tu participación gratuita.", action: "Participar ahora", url: "/sorteo/ep03?preview=open"
     },
     closed: {

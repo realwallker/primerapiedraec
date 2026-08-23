@@ -494,7 +494,7 @@ grant execute on function public.admin_publish_giveaway(text) to authenticated;
 
 insert into public.giveaway_campaigns (id, title, opens_at, closes_at, draw_at, status, terms_version)
 values
-  ('ep03-boris-2026', 'El conejito Boris y sus monedas · EP. 03', '2026-08-18 07:00:00-05', '2026-08-23 20:00:00-05', '2026-08-24 10:00:00-05', 'scheduled', '2026-08-13'),
+  ('ep03-boris-2026', 'El conejito Boris y sus monedas · EP. 03', '2026-08-18 07:00:00-05', '2026-08-31 20:00:00-05', '2026-09-01 10:00:00-05', 'scheduled', '2026-08-13'),
   ('ep03-boris-2026-preview', 'Preview · El conejito Boris y sus monedas', '2026-08-01 00:00:00-05', '2026-09-01 00:00:00-05', '2026-09-01 10:00:00-05', 'open', '2026-08-13')
 on conflict (id) do update set
   title = excluded.title,

@@ -4,8 +4,8 @@ const { getConfig, isConfigured, json, rpc } = require("../_lib/sorteo");
 
 function fallback(config) {
   const opensAt = "2026-08-18T07:00:00-05:00";
-  const closesAt = "2026-08-23T20:00:00-05:00";
-  const drawAt = "2026-08-24T10:00:00-05:00";
+  const closesAt = "2026-08-31T20:00:00-05:00";
+  const drawAt = "2026-09-01T10:00:00-05:00";
   const now = Date.now();
   const stage = now < Date.parse(opensAt) ? "upcoming" : now < Date.parse(closesAt) ? "open" : "closed";
   return { configured: false, campaignId: config.campaignId, stage, opensAt, closesAt, drawAt, winners: [] };

@@ -96,7 +96,7 @@ Nunca deben incorporarse secretos al repositorio. `.env.example` documenta las c
 
 La lógica del episodio usa hora de Ecuador (`UTC-5`): expectativa hasta el lunes 17 a las 09:00, preestreno hasta el martes 18 a las 09:00 y episodio disponible desde ese momento. Los CTAs generales llevan al canal oficial de YouTube.
 
-El sorteo se abre automáticamente el martes 18 a las 07:00 y cierra el domingo 23 a las 20:00, hora de Ecuador. La fecha de la transmisión final permanece editable en la campaña hasta ser confirmada por el equipo.
+El sorteo se abre automáticamente el martes 18 a las 07:00 y cierra el lunes 31 a las 20:00, hora de Ecuador. La fecha de la transmisión final permanece editable en la campaña hasta ser confirmada por el equipo.
 
 ## Privacidad y operación
 
